@@ -11,18 +11,14 @@ def set_every_empty_field_to_zero(df):
 
 '''
     rename Column:
-        - A (Column K / Index 11) to 'Höhe'
-        - B (Column L / Index 12) to 'Breite'
-        - D (Column N / Index 13) to 'Breite klein'
-        - C (Column N / Index 14) to 'Höhe klein'
+        - A (Column K / Index 10) to 'Breite'
+        - B (Column L / Index 11) to 'Höhe'
 
 
 '''
 def rename_Columns(df):
+    df.columns.values[10] = 'Breite'
     df.columns.values[11] = 'Höhe'
-    df.columns.values[12] = 'Breite'
-    df.columns.values[13] = 'Breite klein'
-    df.columns.values[14] = 'Höhe klein'
 
 
 '''
@@ -30,7 +26,7 @@ def rename_Columns(df):
 '''
 def delete_unnecessary_components(df):
     #set filter
-    filt_no_IfcGlobalId = df[(df['IfcGlobalId'] == '0')].index
+    filt_no_IfcGlobalId = df[(df['IfcGlobalId'] == 0)].index
     #delete rows
     df.drop(filt_no_IfcGlobalId, inplace = True)
 
@@ -49,7 +45,7 @@ def change_LT_to_L(df):
 '''
 def arrange_dimensions(df):
     #set filter
-    components_luftleitung = df.loc[(df['KZ'] == 'L')]
+    components_luftleitung = df.loc[(df['KZ'] == 'L') | (df['KZ'] == 'BS')]
 
     #get index
     components_liste = components_luftleitung.index.tolist()
@@ -71,47 +67,30 @@ def arrange_dimensions(df):
     for index in components_liste:
         width_one = components_konus.loc[index, 'Breite']
         height_one = components_konus.loc[index, 'Höhe']
-        width_two = components_konus.loc[index, 'Breite 2']
-        height_two = components_konus.loc[index, 'Höhe 2']
+        width_two = components_konus.loc[index, 'C']
+        height_two = components_konus.loc[index, 'D']
 
         surface_one = width_one * height_one
         surface_two = width_two * height_two
+
+        if width_one < height_one:
+            tem_width = df.at[index, 'Breite']
+            df.at[index, 'Breite'] = df.at[index, 'Höhe']
+            df.at[index, 'Höhe'] = tem_width
+        
+        if width_two < height_two:
+            tem_width = df.at[index, 'C']
+            df.at[index, 'C'] = df.at[index, 'D']
+            df.at[index, 'D'] = tem_width
 
         if surface_one < surface_two:
 
             df.at[index, 'Breite'] = width_two
             df.at[index, 'Höhe'] = height_two
-
             df.at[index, 'C'] = width_one
             df.at[index, 'D'] = height_one
 
     #Hosenstücke, abzweigstücke, kreuzstück müssen noch hinzugefügt werden!
-
-'''
-    Duct transitions are usually generated on random lenghts.
-    So that these components do not generate unnecessary lines, they are rounded to 500mm, 750mm and 1000m, 1500mm, 2000mm.
-'''
-def format_etagen_and_konus(df):
-    #set filter
-    components = df.loc[(df['KZ'] == 'UA') | (df['KZ'] == 'US')]
-    
-    #get index from every etage / konus
-    components_liste = components.index.tolist()
-    
-    #format every length
-    for index in components_liste:
-        length = components.loc[index, 'L']
-        
-        if length < 500.0:
-            df.at[index, 'L'] = 500.0
-        elif length < 750.0:
-            df.at[index, 'L'] = 750.0
-        elif length < 1000.0:
-            df.at[index, 'L'] = 1000.0
-        elif length < 1500.0:
-            df.at[index, 'L'] = 1500.0
-        else:
-            df.at[index, 'L'] = 2000.0
 
 '''
     Uses filter to get all duplicates from the index row
@@ -122,7 +101,17 @@ def format_etagen_and_konus(df):
 def count_duplicates_and_delete(df):
     for index, row in df.iterrows():
         if len(df) > index:
-            duplicatedRows = df.loc[(df['KZ'] == df.at[index, 'KZ']) & (df['Breite'] == df.at[index, 'Breite']) & (df['Höhe'] == df.at[index, 'Höhe']) & (df['W'] == df.at[index, 'W']) & (df['D'] == df.at[index, 'D']) & (df['D1'] == df.at[index, 'D1']) & (df['D2'] == df.at[index, 'D2']) & (df['D3'] == df.at[index, 'D3']) & (df['IsoArt'] == df.at[index, 'IsoArt']) & (df['IsoZ'] == df.at[index, 'IsoZ']) & (df['LtgTyp'] == df.at[index, 'LtgTyp'])]
+            duplicatedRows = df.loc[(df['KZ'] == df.at[index, 'KZ']) & 
+                                    (df['Breite'] == df.at[index, 'Breite']) & 
+                                    (df['Höhe'] == df.at[index, 'Höhe']) & 
+                                    (df['W'] == df.at[index, 'W']) & 
+                                    (df['D'] == df.at[index, 'D']) & 
+                                    (df['D1'] == df.at[index, 'D1']) & 
+                                    (df['D2'] == df.at[index, 'D2']) & 
+                                    (df['D3'] == df.at[index, 'D3']) & 
+                                    (df['IsoArt'] == df.at[index, 'IsoArt']) & 
+                                    (df['IsoZ'] == df.at[index, 'IsoZ']) & 
+                                    (df['LtgTyp'] == df.at[index, 'LtgTyp'])]
 
             #length and pieces
             df.at[index, 'L'] = duplicatedRows['L'].sum()
@@ -133,6 +122,8 @@ def count_duplicates_and_delete(df):
 
             #get index of duplicates and delete them
             duplicatedRows_index = duplicatedRows.index.tolist()
+            duplicatedRows_index.pop(0)
+
             df = df.drop(duplicatedRows_index)
             df = df.reset_index(drop=True)
     return df
