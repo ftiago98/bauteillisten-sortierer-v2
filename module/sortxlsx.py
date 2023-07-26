@@ -10,6 +10,7 @@ delete_unnecessary_components(df)
 change_LT_to_L(df)
 arrange_dimensions(df)
 df = count_duplicates_and_delete(df)
+df = delete_unnecessary_rows_and_columns(df)
 
 #Save or override xlsx file
 df.to_excel('C:\Dev\Bauteillisten-sortierer-v2\data\Bauteilliste_edited.xlsx')

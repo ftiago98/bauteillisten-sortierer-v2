@@ -186,4 +186,5 @@ def delete_unnecessary_rows_and_columns(df):
         - ArticleNumber
         - StandardNumber
     '''
-    return None
+    df.drop(['Nr', 'TsNr'], inplace=True, axis=1)
+    return df
