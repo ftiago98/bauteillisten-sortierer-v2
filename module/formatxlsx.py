@@ -55,7 +55,7 @@ def change_asymmetrisch_to_symmetrisch(df):
 '''
 def arrange_dimensions(df):
     #set filter
-    components_luftleitung = df.loc[(df['KZ'] == 'Gesamtlänge') | (df['KZ'] == 'BS')]
+    components_luftleitung = df.loc[(df['KZ'] == 'L') | (df['KZ'] == 'BS')]
 
     #get index
     components_liste = components_luftleitung.index.tolist()
